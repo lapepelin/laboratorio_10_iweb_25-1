@@ -1,8 +1,6 @@
 package com.example.webapphr2.Daos;
 
 
-import com.example.webapphr2.Beans.Job;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.logging.Level;

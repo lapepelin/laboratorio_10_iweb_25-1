@@ -1,6 +1,5 @@
 package com.example.webapphr2.Controllers;
 
-import com.example.webapphr2.Beans.Department;
 import com.example.webapphr2.Daos.DepartmentDao;
 import com.example.webapphr2.Daos.EmployeeDao;
 import jakarta.servlet.*;

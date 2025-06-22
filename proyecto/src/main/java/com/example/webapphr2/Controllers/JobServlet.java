@@ -1,7 +1,6 @@
 package com.example.webapphr2.Controllers;
 
 
-import com.example.webapphr2.Beans.Job;
 import com.example.webapphr2.Daos.JobDao;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;

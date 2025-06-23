@@ -36,7 +36,7 @@ public class BuscaminasServlet extends HttpServlet {
             request.setAttribute("configuracion", configuracion);
             request.setAttribute("tablero", tablero);
         }
-        request.getRequestDispatcher("buscaminas.jsp").forward(request,response);
+        request.getRequestDispatcher("page.jsp").forward(request,response);
     }
 
     @Override

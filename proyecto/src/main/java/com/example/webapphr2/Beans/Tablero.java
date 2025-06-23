@@ -1,64 +1,89 @@
-package com.example.webapphr2.Controllers;
+package com.example.webapphr2.Beans;
 
-import com.example.webapphr2.Beans.Configuracion;
-import com.example.webapphr2.Beans.Movimiento;
-import com.example.webapphr2.Beans.Posicion;
-import com.example.webapphr2.Beans.Tablero;
-import com.example.webapphr2.Daos.ConfiguracionDao;
-import com.example.webapphr2.Daos.MovimientoDao;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
 
-import java.io.IOException;
-import java.util.ArrayList;
+public class Tablero {
 
-@WebServlet(name = "BuscaminasServlet", urlPatterns = {"/buscaminas"})
-public class BuscaminasServlet extends HttpServlet {
-
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        ConfiguracionDao configuracionDao = new ConfiguracionDao();
-        MovimientoDao movimientoDao = new MovimientoDao();
-
-        Configuracion configuracion = configuracionDao.obtenerConfiguracionActiva();
-        if(configuracion != null){
-            ArrayList<Posicion> bombas = configuracionDao.listarBombas(configuracion.getIdMina());
-            Tablero tablero = new Tablero(configuracion, bombas);
-
-            ArrayList<Movimiento> movimientos = movimientoDao.listarMovimientos(configuracion.getIdMina());
-            for(Movimiento m : movimientos){
-                tablero.revelar(m.getX(), m.getY());
-            }
-
-            request.setAttribute("configuracion", configuracion);
-            request.setAttribute("tablero", tablero);
-        }
-        request.getRequestDispatcher("buscaminas.jsp").forward(request,response);
+    public enum EstadoCelda {
+        OCULTA,
+        REVELADA,
+        MARCADA
     }
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String xStr = request.getParameter("x");
-        String yStr = request.getParameter("y");
+    private Configuracion configuracion;
+    private EstadoCelda[][] estado;
+    private boolean[][] bombas;
 
-        if(xStr != null && yStr != null){
-            int x = Integer.parseInt(xStr);
-            int y = Integer.parseInt(yStr);
-            ConfiguracionDao configuracionDao = new ConfiguracionDao();
-            MovimientoDao movimientoDao = new MovimientoDao();
-            Configuracion configuracion = configuracionDao.obtenerConfiguracionActiva();
-            if(configuracion != null){
-                Movimiento movimiento = new Movimiento();
-                movimiento.setConfiguracion(configuracion);
-                movimiento.setX(x);
-                movimiento.setY(y);
-                movimiento.setEstado("REVELADA");
-                movimientoDao.registrarMovimiento(movimiento);
+    public Tablero(Configuracion configuracion, List<Posicion> posicionesBombas) {
+        this.configuracion = configuracion;
+        int filas = configuracion.getDimMinaX();
+        int columnas = configuracion.getDimMinaY();
+        estado = new EstadoCelda[filas][columnas];
+        bombas = new boolean[filas][columnas];
+        for (int i = 0; i < filas; i++) {
+            for (int j = 0; j < columnas; j++) {
+                estado[i][j] = EstadoCelda.OCULTA;
+                bombas[i][j] = false;
             }
         }
-        response.sendRedirect("buscaminas");
+        for (Posicion p : posicionesBombas) {
+            if (!fueraDeRango(p.getCoordenadaX(), p.getCoordenadaY())) {
+                bombas[p.getCoordenadaX()][p.getCoordenadaY()] = true;
+            }
+        }
+    }
+
+    public boolean revelar(int x, int y) {
+        if (fueraDeRango(x, y) || estado[x][y] != EstadoCelda.OCULTA) {
+            return true;
+        }
+        if (bombas[x][y]) {
+            estado[x][y] = EstadoCelda.REVELADA;
+            return false;
+        } else {
+            estado[x][y] = EstadoCelda.REVELADA;
+            return true;
+        }
+    }
+
+    public void marcar(int x, int y) {
+        if (!fueraDeRango(x, y) && estado[x][y] == EstadoCelda.OCULTA) {
+            estado[x][y] = EstadoCelda.MARCADA;
+        }
+    }
+
+    public EstadoCelda obtenerEstado(int x, int y) {
+        if (fueraDeRango(x, y)) {
+            throw new IndexOutOfBoundsException("Coordenadas fuera de rango");
+        }
+        return estado[x][y];
+    }
+
+    public int contarBombasAlrededor(int x, int y) {
+        int conteo = 0;
+        for (int i = x - 1; i <= x + 1; i++) {
+            for (int j = y - 1; j <= y + 1; j++) {
+                if (i == x && j == y) continue;
+                if (!fueraDeRango(i, j) && bombas[i][j]) {
+                    conteo++;
+                }
+            }
+        }
+        return conteo;
+    }
+
+    public boolean haGanado() {
+        for (int i = 0; i < estado.length; i++) {
+            for (int j = 0; j < estado[i].length; j++) {
+                if (!bombas[i][j] && estado[i][j] != EstadoCelda.REVELADA) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean fueraDeRango(int x, int y) {
+        return x < 0 || y < 0 || x >= estado.length || y >= estado[0].length;
     }
 }
